@@ -1,0 +1,22 @@
+/*  */
+/*  */
+/*  */
+
+.budget-container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+
+h1,
+.title {
+  margin: 0;
+}
+
+.value p,
+.income-total p,
+.outcome-total p {
+  display: inline-block;
+  color: blue;
+}
