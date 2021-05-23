@@ -29,9 +29,13 @@ const addIncome = document.querySelector('.add-income');
 const incomeTitle = document.querySelector('#income-title-input');
 const incomeAmount = document.querySelector('#income-amount-input');
 
-let ENTRY_LIST = [];
+// let ENTRY_LIST = [];
+let ENTRY_LIST;
 let [balance, income, outcome] = [0, 0, 0];
 let [deleteIcon, editIcon] = ['fas fa-trash', 'far fa-edit'];
+
+ENTRY_LIST = JSON.parse(localStorage.getItem('entry-list')) || [];
+updateUI();
 
 // Expense Button event listener
 expenseBtn.addEventListener('click', function () {
@@ -62,6 +66,45 @@ addExpense.addEventListener('click', budgetOut);
 
 // addIncome Event Listener
 addIncome.addEventListener('click', budgetIn);
+
+// Lists Event Listener
+lists.forEach(function (list) {
+  list.addEventListener('click', function (e) {
+    if (e.target.localName !== 'i') return;
+    let targetBtn = e.target.attributes.class.value;
+    let entry = e.target.parentNode.parentNode;
+    let targetId = entry.attributes.id.value;
+
+    if (targetBtn === editIcon) {
+      editEntry(targetId);
+    } else if (targetBtn === deleteIcon) {
+      deleteEntry(targetId);
+    }
+  });
+});
+
+// Delete Entry Function
+function deleteEntry(targetId) {
+  ENTRY_LIST.splice(targetId, 1);
+  updateUI();
+}
+
+// Edit Entry Function
+function editEntry(targetId) {
+  let targetType = ENTRY_LIST[targetId].type;
+  let targetAmount = ENTRY_LIST[targetId].amount;
+  let targetTitle = ENTRY_LIST[targetId].title;
+
+  if (targetType === 'income') {
+    incomeAmount.value = targetAmount;
+    incomeTitle.value = targetTitle;
+  } else if (targetType === 'expense') {
+    expenseAmount.value = targetAmount;
+    expenseTitle.value = targetTitle;
+  }
+
+  deleteEntry(targetId);
+}
 
 // addExpense/addIncome Enter key Event Listener
 document.addEventListener('keypress', function (e) {
@@ -115,9 +158,51 @@ function budgetIn(e) {
 function updateUI() {
   income = calculateTotal('income', ENTRY_LIST);
   outcome = calculateTotal('expense', ENTRY_LIST);
-  balance = calculateBalance(income, outcome);
+  balance = Math.abs(calculateBalance(income, outcome));
 
-  console.log([balance, income, outcome]);
+  let sign = income >= outcome ? '$' : '-$';
+
+  // Updating the UI
+  balanceEl.innerHTML = `<p>${sign}</p><p>${balance}</p>`;
+  incomeTotalEl.innerHTML = `<p>$</p><p>${income}</p>`;
+  outcomeTotalEl.innerHTML = `<p>$</p><p>${outcome}</p>`;
+
+  clearElement([expenseList, incomeList, allList]);
+
+  ENTRY_LIST.forEach(function (entry, index) {
+    if (entry.type === 'expense') {
+      showEntry(expenseList, entry.type, entry.title, entry.amount, index);
+    } else if (entry.type === 'income') {
+      showEntry(incomeList, entry.type, entry.title, entry.amount, index);
+    }
+    showEntry(allList, entry.type, entry.title, entry.amount, index);
+  });
+
+  updateChart(income, outcome);
+
+  localStorage.setItem('entry-list', JSON.stringify(ENTRY_LIST));
+}
+
+// showEntry Function
+function showEntry(list, type, title, amount, id) {
+  const entry = `
+    <li id="${id}" class="${type}">
+      <div class="entry">${title}: $${amount}</div>  
+      <div class="action">
+        <i class="far fa-edit"></i>
+        <i class="fas fa-trash"></i>
+      </div>  
+    </li>
+  `;
+  const position = 'afterbegin';
+  list.insertAdjacentHTML(position, entry);
+}
+
+// clearElement Function
+function clearElement(elements) {
+  elements.forEach(function (element) {
+    element.innerHTML = '';
+  });
 }
 
 // clearInput function
